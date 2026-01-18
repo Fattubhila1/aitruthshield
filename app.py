@@ -287,36 +287,38 @@ with col2:
         if st.button("Verify Text", key="text"):
             perform_analysis(text)
 
-    with tab2:
-        img_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
-        if img_file:
-            img = Image.open(img_file).convert("RGB")
-            st.image(img, use_container_width=True)
+  with tab2:
+    img_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+    if img_file:
+        img = Image.open(img_file).convert("RGB")
+        st.image(img, use_container_width=True)
 
-            if st.button("Extract & Verify", key="img"):
-                is_spam, score = clip_image_spam_predict(img)
+        if st.button("Extract & Verify", key="img"):
+            is_spam, score = clip_image_spam_predict(img)
 
-                if is_spam:
-                    st.markdown(f"""
-                    <div class="verdict-box">
-                        <p>The Image News is</p>
-                        <p class="verdict-text fake-text">FAKE / SPAM</p>
-                        <p>AI Image Spam Score: {score:.2f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+            if is_spam:
+                st.markdown(f"""
+                <div class="verdict-box">
+                    <p>The Image News is</p>
+                    <p class="verdict-text fake-text">FAKE / SPAM</p>
+                    <p>AI Image Spam Score: {score:.2f}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            else:
+                reader = get_reader()
+
+                if reader is None:
+                    st.warning(
+                        "OCR is not available on cloud. "
+                        "Image AI analysis was completed successfully."
+                    )
                 else:
-                   reader = get_reader()
-
-if reader is None:
-    st.warning("OCR is not available on cloud. Image AI analysis was completed.")
-else:
-    result = reader.readtext(np.array(img), detail=0, paragraph=True)
-    extracted = " ".join(result)
-
-    if extracted.strip():
-        perform_analysis(extracted)
-    else:
-        st.error("No readable text found.")
+                    result = reader.readtext(
+                        np.array(img),
+                        detail=0,
+                        paragraph=True
+                    )
 
                     extracted = " ".join(result)
 
@@ -324,6 +326,7 @@ else:
                         perform_analysis(extracted)
                     else:
                         st.error("No readable text found.")
+
 
     with tab3:
         url = st.text_input("Article URL")
@@ -335,4 +338,5 @@ else:
                 perform_analysis(article.text)
             except:
                 st.error("Failed to fetch article.")
+
 
