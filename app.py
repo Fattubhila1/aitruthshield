@@ -1,5 +1,4 @@
 import streamlit as st
-import easyocr
 import numpy as np
 from PIL import Image
 from newspaper import Article
@@ -12,6 +11,14 @@ import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from transformers import pipeline, CLIPProcessor, CLIPModel
+
+def safe_import_easyocr():
+    try:
+        import easyocr
+        return easyocr
+    except ImportError:
+        return None
+
 
 warnings.filterwarnings("ignore")
 
@@ -116,7 +123,11 @@ def sanitize_for_pdf(text):
 # -------------------------------------------------
 @st.cache_resource
 def get_reader():
+    easyocr = safe_import_easyocr()
+    if easyocr is None:
+        return None
     return easyocr.Reader(['en'], gpu=False)
+
 
 # -------------------------------------------------
 # ML MODEL (TF-IDF + LOGISTIC)
@@ -294,8 +305,19 @@ with col2:
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    reader = get_reader()
-                    result = reader.readtext(np.array(img), detail=0, paragraph=True)
+                   reader = get_reader()
+
+if reader is None:
+    st.warning("OCR is not available on cloud. Image AI analysis was completed.")
+else:
+    result = reader.readtext(np.array(img), detail=0, paragraph=True)
+    extracted = " ".join(result)
+
+    if extracted.strip():
+        perform_analysis(extracted)
+    else:
+        st.error("No readable text found.")
+
                     extracted = " ".join(result)
 
                     if extracted.strip():
@@ -313,3 +335,4 @@ with col2:
                 perform_analysis(article.text)
             except:
                 st.error("Failed to fetch article.")
+
