@@ -1,0 +1,11 @@
+streamlit
+easyocr
+numpy
+pillow
+newspaper3k
+fpdf
+scikit-learn
+joblib
+transformers
+torch
+torchvision
