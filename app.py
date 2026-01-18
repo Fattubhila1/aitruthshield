@@ -282,61 +282,70 @@ col1, col2, col3 = st.columns([1, 8, 1])
 with col2:
     tab1, tab2, tab3 = st.tabs(["[ 📄 ] TEXT", "[ 🖼️ ] IMAGE", "[ 🌐 ] URL"])
 
+    # ---------------- TEXT TAB ----------------
     with tab1:
         text = st.text_area("Text", height=150)
-        if st.button("Verify Text", key="text"):
+        if st.button("Verify Text", key="text_verify"):
             perform_analysis(text)
 
-  with tab2:
-    img_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
-    if img_file:
-        img = Image.open(img_file).convert("RGB")
-        st.image(img, use_container_width=True)
+    # ---------------- IMAGE TAB ----------------
+    with tab2:
+        img_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
 
-        if st.button("Extract & Verify", key="img"):
-            is_spam, score = clip_image_spam_predict(img)
+        if img_file is not None:
+            img = Image.open(img_file).convert("RGB")
+            st.image(img, use_container_width=True)
 
-            if is_spam:
-                st.markdown(f"""
-                <div class="verdict-box">
-                    <p>The Image News is</p>
-                    <p class="verdict-text fake-text">FAKE / SPAM</p>
-                    <p>AI Image Spam Score: {score:.2f}</p>
-                </div>
-                """, unsafe_allow_html=True)
+            if st.button("Extract & Verify", key="img_verify"):
 
-            else:
-                reader = get_reader()
+                # AI IMAGE CHECK
+                is_spam_img, spam_score = clip_image_spam_predict(img)
 
-                if reader is None:
-                    st.warning(
-                        "OCR is not available on cloud. "
-                        "Image AI analysis was completed successfully."
+                if is_spam_img:
+                    st.markdown(
+                        f"""
+                        <div class="verdict-box">
+                            <p>The Image News is</p>
+                            <p class="verdict-text fake-text">FAKE / SPAM</p>
+                            <p>AI Image Spam Score: {spam_score:.2f}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
                 else:
-                    result = reader.readtext(
-                        np.array(img),
-                        detail=0,
-                        paragraph=True
-                    )
+                    reader = get_reader()
 
-                    extracted = " ".join(result)
-
-                    if extracted.strip():
-                        perform_analysis(extracted)
+                    if reader is None:
+                        st.warning(
+                            "OCR is not available on cloud. Image AI analysis completed."
+                        )
                     else:
-                        st.error("No readable text found.")
+                        result = reader.readtext(
+                            np.array(img),
+                            detail=0,
+                            paragraph=True,
+                        )
 
+                        extracted = " ".join(result)
 
+                        if extracted.strip():
+                            perform_analysis(extracted)
+                        else:
+                            st.error("No readable text found in image.")
+
+    # ---------------- URL TAB ----------------
     with tab3:
         url = st.text_input("Article URL")
-        if st.button("Check URL", key="url"):
+
+        if st.button("Check URL", key="url_verify"):
             try:
                 article = Article(url, browser_user_agent="Mozilla/5.0")
                 article.download()
                 article.parse()
-                perform_analysis(article.text)
-            except:
+
+                if article.text.strip():
+                    perform_analysis(article.text)
+                else:
+                    st.error("Could not extract article text.")
+            except Exception:
                 st.error("Failed to fetch article.")
-
-
