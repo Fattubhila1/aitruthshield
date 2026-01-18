@@ -2,10 +2,19 @@ streamlit==1.31.0
 numpy
 pillow
 opencv-python-headless
+
+# NLP / URL parsing
 newspaper3k
-fpdf
+lxml
+beautifulsoup4
+nltk
+
+# ML / AI
 scikit-learn
 joblib
 transformers
 torch
 torchvision
+
+# PDF
+fpdf
